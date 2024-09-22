@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Speech Assessment System</title>
+    <style>
+      :root {
+        --background: #f4f4f5;
+        --foreground: #09090b;
+        --card: #ffffff;
+        --card-foreground: #09090b;
+        --primary: #18181b;
+        --primary-foreground: #fafafa;
+        --secondary: #f4f4f5;
+        --secondary-foreground: #18181b;
+        --accent: #f4f4f5;
+        --accent-foreground: #18181b;
+        --destructive: #ef4444;
+        --destructive-foreground: #fafafa;
+        --ring: #18181b;
+        --radius: 0.5rem;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background-color: var(--background);
+        color: var(--foreground);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .container {
+        background-color: var(--card);
+        border-radius: var(--radius);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        padding: 2rem;
+        width: 90%;
+        max-width: 480px;
+      }
+
+      h1,
+      h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        text-align: center;
+      }
+
+      h2 {
+        font-size: 1.2rem;
+        margin-top: 1.5rem;
+      }
+
+      .topic {
+        background-color: var(--accent);
+        padding: 1rem;
+        border-radius: var(--radius);
+        margin-bottom: 1rem;
+        text-align: center;
+        font-weight: 500;
+      }
+
+      .record-button,
+      .generate-button {
+        background-color: var(--primary);
+        color: var(--primary-foreground);
+        border: none;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border-radius: var(--radius);
+        cursor: pointer;
+        width: 100%;
+        transition: background-color 0.2s;
+        margin-bottom: 1rem;
+      }
+
+      .record-button:hover,
+      .generate-button:hover {
+        background-color: var(--ring);
+      }
+
+      .record-button:disabled,
+      .generate-button:disabled {
+        background-color: var(--secondary);
+        color: var(--secondary-foreground);
+        cursor: not-allowed;
+      }
+
+      .generate-button {
+        background-color: var(--accent);
+        color: var(--accent-foreground);
+      }
+
+      .generate-button:hover {
+        background-color: var(--secondary);
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background-color: var(--secondary);
+        border-radius: var(--radius);
+        margin: 1rem 0;
+        overflow: hidden;
+      }
+
+      .progress {
+        width: 0;
+        height: 100%;
+        background-color: var(--primary);
+        transition: width 0.1s linear;
+      }
+
+      .controls {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .control-button {
+        background-color: var(--secondary);
+        color: var(--secondary-foreground);
+        border: none;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .control-button:hover {
+        background-color: var(--accent);
+      }
+
+      .results {
+        margin-top: 1.5rem;
+      }
+
+      .result-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        padding: 0.75rem;
+        background-color: var(--secondary);
+        border-radius: var(--radius);
+      }
+
+      .result-label {
+        font-weight: 500;
+      }
+
+      .result-value {
+        font-weight: 600;
+        color: var(--primary);
+      }
+
+      .audio-player {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 1rem;
+      }
+
+      .audio-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .audio-button {
+        background-color: var(--primary);
+        color: var(--primary-foreground);
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .audio-button:hover {
+        background-color: var(--ring);
+      }
+
+      .audio-button:disabled {
+        background-color: var(--secondary);
+        color: var(--secondary-foreground);
+        cursor: not-allowed;
+      }
+
+      .audio-time {
+        font-size: 0.875rem;
+        font-weight: 500;
+      }
+
+      .audio-progress {
+        width: 100%;
+        height: 4px;
+        background-color: var(--secondary);
+        border-radius: var(--radius);
+        overflow: hidden;
+        cursor: pointer;
+      }
+
+      .audio-progress-bar {
+        width: 0;
+        height: 100%;
+        background-color: var(--primary);
+        transition: width 0.1s linear;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Speech Assessment System</h1>
+      <div id="topic" class="topic">Loading topic...</div>
+      <button id="generateButton" class="generate-button">
+        Generate New Topic
+      </button>
+      <button id="recordButton" class="record-button">Start Recording</button>
+      <div class="progress-bar">
+        <div id="progress" class="progress"></div>
+      </div>
+      <div
+        id="timer"
+        style="text-align: center; font-size: 1.2rem; font-weight: 500"
+      >
+        00:00
+      </div>
+      <h2>Recording</h2>
+      <div class="audio-player">
+        <div class="audio-controls">
+          <button id="playButton" class="audio-button" disabled>▶</button>
+          <button id="pauseButton" class="audio-button" disabled>⏸</button>
+          <button id="stopButton" class="audio-button" disabled>⏹</button>
+        </div>
+        <div class="audio-time">
+          <span id="currentTime">00:00</span> / <span id="duration">00:00</span>
+        </div>
+        <div id="audioProgress" class="audio-progress">
+          <div id="audioProgressBar" class="audio-progress-bar"></div>
+        </div>
+      </div>
+      <audio id="audioPlayback" style="display: none"></audio>
+      <h2>Score</h2>
+      <div id="results" class="results">
+        <div class="result-item">
+          <span class="result-label">Pronunciation</span>
+          <span class="result-value" id="pronunciationScore">-</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">Fluency</span>
+          <span class="result-value" id="fluencyScore">-</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">Completeness</span>
+          <span class="result-value" id="completenessScore">-</span>
+        </div>
+        <div class="result-item">
+          <span class="result-label">Accuracy</span>
+          <span class="result-value" id="accuracyScore">-</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const topics = [
+        "The importance of renewable energy",
+        "Benefits of learning a second language",
+        "Impact of social media on society",
+        "Climate change and its effects",
+        "The role of artificial intelligence in daily life",
+      ];
+
+      let mediaRecorder;
+      let audioChunks = [];
+      let startTime;
+      let timerInterval;
+      let audioBlob;
+      const recordButton = document.getElementById("recordButton");
+      const generateButton = document.getElementById("generateButton");
+      const playButton = document.getElementById("playButton");
+      const pauseButton = document.getElementById("pauseButton");
+      const stopButton = document.getElementById("stopButton");
+      const timer = document.getElementById("timer");
+      const results = document.getElementById("results");
+      const progress = document.getElementById("progress");
+      const audioPlayback = document.getElementById("audioPlayback");
+      const topicElement = document.getElementById("topic");
+      const currentTimeElement = document.getElementById("currentTime");
+      const durationElement = document.getElementById("duration");
+      const audioProgress = document.getElementById("audioProgress");
+      const audioProgressBar = document.getElementById("audioProgressBar");
+
+      function selectRandomTopic() {
+        const randomIndex = Math.floor(Math.random() * topics.length);
+        topicElement.textContent = topics[randomIndex];
+      }
+
+      selectRandomTopic();
+
+      generateButton.addEventListener("click", selectRandomTopic);
+      recordButton.addEventListener("click", toggleRecording);
+      playButton.addEventListener("click", playRecording);
+      pauseButton.addEventListener("click", pauseRecording);
+      stopButton.addEventListener("click", stopPlayback);
+      audioProgress.addEventListener("click", seekAudio);
+
+      function toggleRecording() {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+          stopRecording();
+        } else {
+          startRecording();
+        }
+      }
+
+      async function startRecording() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+
+          mediaRecorder.ondataavailable = (event) => {
+            audioChunks.push(event.data);
+          };
+
+          mediaRecorder.onstop = processAudio;
+
+          mediaRecorder.start();
+          startTime = Date.now();
+          updateTimer();
+          timerInterval = setInterval(updateTimer, 1000);
+          recordButton.textContent = "Stop Recording";
+          results.style.display = "none";
+          playButton.disabled = true;
+          pauseButton.disabled = true;
+          stopButton.disabled = true;
+        } catch (error) {
+          console.error("Error accessing microphone:", error);
+        }
+      }
+
+      function stopRecording() {
+        mediaRecorder.stop();
+        clearInterval(timerInterval);
+        recordButton.textContent = "Start Recording";
+      }
+
+      function updateTimer() {
+        const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+        const minutes = Math.floor(elapsedTime / 60)
+          .toString()
+          .padStart(2, "0");
+        const seconds = (elapsedTime % 60).toString().padStart(2, "0");
+        timer.textContent = `${minutes}:${seconds}`;
+
+        // Update progress bar
+        const progressPercentage = ((elapsedTime % 60) / 60) * 100;
+        progress.style.width = `${progressPercentage}%`;
+      }
+
+      function processAudio() {
+        audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+        audioPlayback.src = URL.createObjectURL(audioBlob);
+        playButton.disabled = false;
+        pauseButton.disabled = false;
+        stopButton.disabled = false;
+        sendAudioToAPI();
+        updateAudioDuration();
+      }
+
+      function playRecording() {
+        audioPlayback.play();
+        updateAudioProgress();
+      }
+
+      function pauseRecording() {
+        audioPlayback.pause();
+      }
+
+      function stopPlayback() {
+        audioPlayback.pause();
+        audioPlayback.currentTime = 0;
+        updateAudioProgress();
+      }
+
+      function updateAudioProgress() {
+        const updateProgress = () => {
+          const currentTime = formatTime(audioPlayback.currentTime);
+          const duration = formatTime(audioPlayback.duration);
+          currentTimeElement.textContent = currentTime;
+          durationElement.textContent = duration;
+          const progressPercentage =
+            (audioPlayback.currentTime / audioPlayback.duration) * 100;
+          audioProgressBar.style.width = `${progressPercentage}%`;
+
+          if (!audioPlayback.paused) {
+            requestAnimationFrame(updateProgress);
+          }
+        };
+
+        requestAnimationFrame(updateProgress);
+      }
+
+      function seekAudio(event) {
+        const bounds = audioProgress.getBoundingClientRect();
+        const x = event.clientX - bounds.left;
+        const percentage = x / bounds.width;
+        audioPlayback.currentTime = percentage * audioPlayback.duration;
+        updateAudioProgress();
+      }
+
+      function formatTime(time) {
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}`;
+      }
+
+      function updateAudioDuration() {
+        audioPlayback.addEventListener("loadedmetadata", () => {
+          const duration = formatTime(audioPlayback.duration);
+          durationElement.textContent = duration;
+        });
+      }
+
+      function sendAudioToAPI() {
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "recording.wav");
+
+        // Placeholder for API call
+        setTimeout(() => {
+          const mockResponse = {
+            pronunciationScore: 85,
+            fluencyScore: 78,
+            completenessScore: 92,
+            accuracyScore: 88,
+          };
+          displayResults(mockResponse);
+        }, 2000);
+
+        // Uncomment and modify this section when you have the API endpoint
+        /*
+        fetch('YOUR_API_ENDPOINT', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayResults(data);
+        })
+        .catch(error => {
+            console.error('Error sending audio to API:', error);
+        });
+        */
+      }
+
+      function displayResults(data) {
+        document.getElementById("pronunciationScore").textContent =
+          data.pronunciationScore;
+        document.getElementById("fluencyScore").textContent = data.fluencyScore;
+        document.getElementById("completenessScore").textContent =
+          data.completenessScore;
+        document.getElementById("accuracyScore").textContent =
+          data.accuracyScore;
+        results.style.display = "block";
+      }
+
+      // Initialize audio player events
+      audioPlayback.addEventListener("play", () => {
+        playButton.disabled = true;
+        pauseButton.disabled = false;
+        stopButton.disabled = false;
+      });
+
+      audioPlayback.addEventListener("pause", () => {
+        playButton.disabled = false;
+        pauseButton.disabled = true;
+        stopButton.disabled = false;
+      });
+
+      audioPlayback.addEventListener("ended", () => {
+        playButton.disabled = false;
+        pauseButton.disabled = true;
+        stopButton.disabled = true;
+      });
+
+      // Initial setup
+      updateAudioProgress();
+    </script>
+  </body>
+</html>
